@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Ingressos — Festa Junina</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500&display=swap');
+
+  :root {
+    --vermelho: #c0392b;
+    --amarelo: #f39c12;
+    --azul: #1a3a5c;
+    --creme: #fdf6e3;
+    --palha: #e8d5a3;
+    --verde: #27ae60;
+    --cinza: #7f8c8d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--azul);
+    background-image:
+      radial-gradient(ellipse at 20% 10%, #2c5282 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, #7b341e 0%, transparent 50%);
+    min-height: 100vh;
+    color: var(--creme);
+    padding: 24px 16px 60px;
+  }
+
+  /* ── Cabeçalho ── */
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .bandeirolas {
+    font-size: 28px;
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(26px, 6vw, 42px);
+    font-weight: 900;
+    color: var(--amarelo);
+    text-shadow: 3px 3px 0 var(--vermelho);
+    letter-spacing: 1px;
+  }
+  header p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    opacity: .6;
+    margin-top: 6px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 960px; margin: 0 auto; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  @media(max-width: 680px) { .grid { grid-template-columns: 1fr; } }
+
+  /* ── Card ── */
+  .card {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 16px;
+    padding: 28px 24px;
+    backdrop-filter: blur(10px);
+  }
+  .card h2 {
+    font-family: 'Playfair Display', serif;
+    color: var(--amarelo);
+    font-size: 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── Formulário ── */
+  label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    opacity: .7;
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input, select, textarea {
+    width: 100%;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 8px;
+    color: var(--creme);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--amarelo);
+  }
+  select option { background: #1a3a5c; color: #fff; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Botões ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: .5px;
+    padding: 12px 20px;
+    transition: transform .15s, filter .15s;
+  }
+  .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: var(--amarelo); color: #1a1a1a; width: 100%; margin-top: 20px; }
+  .btn-success { background: var(--verde); color: #fff; width: 100%; margin-top: 10px; }
+  .btn-danger  { background: var(--vermelho); color: #fff; padding: 7px 14px; font-size: 12px; }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,.3);
+    color: var(--creme);
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+
+  /* ── Lista de ingressos ── */
+  .full-width { grid-column: 1 / -1; }
+
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+    padding: 12px 18px;
+    text-align: center;
+    flex: 1;
+    min-width: 90px;
+  }
+  .stat .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: var(--amarelo);
+  }
+  .stat .lbl {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    opacity: .6;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Filtro */
+  .filter-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .filter-row input {
+    flex: 1;
+    min-width: 160px;
+  }
+  .filter-row select { width: auto; flex: 0 0 140px; }
+
+  /* Tabela */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    opacity: .5;
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+  tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    transition: background .15s;
+  }
+  tbody tr:hover { background: rgba(255,255,255,.04); }
+  tbody td { padding: 10px 10px; vertical-align: middle; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .badge-ok       { background: rgba(39,174,96,.2);  color: #5ddb8d; border: 1px solid rgba(39,174,96,.3); }
+  .badge-usado    { background: rgba(127,140,141,.2); color: #aaa;    border: 1px solid rgba(127,140,141,.3); }
+  .badge-vip      { background: rgba(243,156,18,.15); color: #f8c555; border: 1px solid rgba(243,156,18,.3); }
+  .badge-geral    { background: rgba(52,152,219,.15); color: #74b9e8; border: 1px solid rgba(52,152,219,.3); }
+  .badge-crianca  { background: rgba(155,89,182,.15); color: #c39bd3; border: 1px solid rgba(155,89,182,.3); }
+  .badge-meia     { background: rgba(230,126,34,.15); color: #f0a060; border: 1px solid rgba(230,126,34,.3); }
+
+  .actions { display: flex; gap: 6px; flex-wrap: nowrap; }
+
+  /* Modal / overlay ── */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.75);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .overlay.open { display: flex; }
+
+  /* ── Ingresso imprimível ── */
+  .ticket-modal {
+    background: var(--creme);
+    color: #1a1a1a;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 480px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5);
+    position: relative;
+  }
+
+  .ticket-top {
+    background: var(--azul);
+    padding: 20px 24px 16px;
+    text-align: center;
+  }
+  .ticket-top .bandeirinhas { font-size: 22px; letter-spacing: 6px; }
+  .ticket-top h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--amarelo);
+    text-shadow: 2px 2px 0 var(--vermelho);
+    margin: 4px 0 2px;
+  }
+  .ticket-top .escola {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,.7);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .ticket-tear {
+    height: 20px;
+    background: var(--azul);
+    position: relative;
+  }
+  .ticket-tear::after {
+    content: '';
+    display: block;
+    height: 20px;
+    background: var(--creme);
+    border-radius: 10px 10px 0 0;
+  }
+  .ticket-tear .circles {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 -8px;
+  }
+
+  .ticket-body {
+    padding: 20px 28px 28px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .ticket-info { flex: 1; }
+  .ticket-info .nome {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--azul);
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+  .ticket-info .detail {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: #555;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .ticket-info .detail span { color: #222; font-weight: 600; }
+
+  .ticket-qr {
+    flex: 0 0 auto;
+    text-align: center;
+  }
+  #qr-render { width: 120px; height: 120px; }
+  #qr-render img, #qr-render canvas { width: 120px !important; height: 120px !important; }
+  .ticket-qr .ticket-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: #888;
+    margin-top: 4px;
+    word-break: break-all;
+    max-width: 120px;
+  }
+
+  .ticket-bottom {
+    background: #f0e8d0;
+    padding: 10px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ticket-bottom .aviso {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .ticket-bottom .tipo-badge {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 2px solid var(--azul);
+    color: var(--azul);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    padding: 16px 28px 20px;
+    background: var(--creme);
+    border-top: 1px solid rgba(0,0,0,.1);
+  }
+  .modal-actions button {
+    flex: 1;
+    padding: 11px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: .5px;
+  }
+  .modal-actions .btn-print { background: var(--azul); color: #fff; }
+  .modal-actions .btn-close { background: #e0d5c0; color: #333; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--verde);
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 12px 24px;
+    border-radius: 30px;
+    opacity: 0;
+    transition: opacity .3s, transform .3s;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.error { background: var(--vermelho); }
+
+  /* Vazio */
+  .empty {
+    text-align: center;
+    padding: 50px 20px;
+    opacity: .4;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+  .empty .icon { font-size: 36px; margin-bottom: 10px; }
+
+  /* Print */
+  @media print {
+    body > *:not(.overlay) { display: none; }
+    .overlay { display: flex !important; position: static; background: none; padding: 0; }
+    .ticket-modal { box-shadow: none; max-width: 100%; }
+    .modal-actions { display: none; }
+    .overlay .ticket-modal { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bandeirolas">🎪 🌽 🎆 🌽 🎪</div>
+  <h1>Festa Junina 2025</h1>
+  <p>Gerador de Ingressos · Portaria Digital</p>
+</header>
+
+<div class="container">
+  <div class="grid">
+
+    <!-- ── Formulário ── -->
+    <div class="card">
+      <h2>🎟️ Novo Ingresso</h2>
+
+      <label>Nome do participante</label>
+      <input type="text" id="inp-nome" placeholder="Ex.: Maria Aparecida da Silva">
+
+      <label>Tipo de ingresso</label>
+      <select id="inp-tipo">
+        <option value="Geral">Geral</option>
+        <option value="VIP">VIP</option>
+        <option value="Meia-entrada">Meia-entrada</option>
+        <option value="Criança">Criança (até 10 anos)</option>
+        <option value="Cortesia">Cortesia</option>
+      </select>
+
+      <div class="row2">
+        <div>
+          <label>Data do evento</label>
+          <input type="date" id="inp-data" value="2025-06-21">
+        </div>
+        <div>
+          <label>Horário</label>
+          <input type="time" id="inp-hora" value="18:00">
+        </div>
+      </div>
+
+      <label>Nome da escola / evento</label>
+      <input type="text" id="inp-escola" placeholder="Ex.: E.M. Santos Dumont">
+
+      <label>Observações (opcional)</label>
+      <input type="text" id="inp-obs" placeholder="Ex.: Setor A, mesa reservada…">
+
+      <button class="btn btn-primary" onclick="gerarIngresso()">
+        ✨ Gerar Ingresso
+      </button>
+    </div>
+
+    <!-- ── Geração em lote ── -->
+    <div class="card">
+      <h2>📦 Lote Rápido</h2>
+
+      <label>Quantidade de ingressos</label>
+      <input type="number" id="inp-qtd" value="10" min="1" max="500">
+
+      <label>Tipo</label>
+      <select id="inp-tipo-lote">
+        <option value="Geral">Geral</option>
+        <option value="VIP">VIP</option>
+        <option value="Meia-entrada">Meia-entrada</option>
+        <option value="Criança">Criança (até 10 anos)</option>
+        <option value="Cortesia">Cortesia</option>
+      </select>
+
+      <label>Prefixo do nome (opcional)</label>
+      <input type="text" id="inp-prefixo" placeholder="Ex.: Aluno Turma A">
+
+      <label>Data do evento</label>
+      <input type="date" id="inp-data-lote" value="2025-06-21">
+
+      <label>Nome da escola / evento</label>
+      <input type="text" id="inp-escola-lote" placeholder="Ex.: E.M. Santos Dumont">
+
+      <button class="btn btn-primary" onclick="gerarLote()">
+        ⚡ Gerar Lote
+      </button>
+
+      <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="exportarCSV()">
+        💾 Exportar lista (.csv)
+      </button>
+    </div>
+
+    <!-- ── Lista ── -->
+    <div class="card full-width">
+      <h2>📋 Ingressos Gerados</h2>
+
+      <div class="stats-bar" id="stats-bar"></div>
+
+      <div class="filter-row">
+        <input type="text" id="filtro-texto" placeholder="🔍 Buscar por nome ou código…" oninput="renderTabela()">
+        <select id="filtro-tipo" onchange="renderTabela()">
+          <option value="">Todos os tipos</option>
+          <option>Geral</option><option>VIP</option>
+          <option>Meia-entrada</option><option>Criança</option><option>Cortesia</option>
+        </select>
+        <select id="filtro-status" onchange="renderTabela()">
+          <option value="">Todos os status</option>
+          <option value="ok">Válido</option>
+          <option value="usado">Usado</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table id="tabela">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Código</th>
+              <th>Nome</th>
+              <th>Tipo</th>
+              <th>Status</th>
+              <th>Gerado em</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="empty" id="empty-msg" style="display:none">
+          <div class="icon">🎪</div>
+          Nenhum ingresso encontrado.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal do ingresso ── -->
+<div class="overlay" id="overlay" onclick="fecharModal(event)">
+  <div class="ticket-modal" id="ticket-modal">
+    <div class="ticket-top">
+      <div class="bandeirinhas">🚩🚩🚩🚩🚩</div>
+      <h2 id="t-evento">Festa Junina 2025</h2>
+      <div class="escola" id="t-escola">Escola Municipal</div>
+    </div>
+    <div class="ticket-tear"></div>
+    <div class="ticket-body">
+      <div class="ticket-info">
+        <div class="nome" id="t-nome">—</div>
+        <div class="detail">📅 <span id="t-data">—</span></div>
+        <div class="detail">⏰ <span id="t-hora">—</span></div>
+        <div class="detail" id="t-obs-row" style="display:none">📝 <span id="t-obs">—</span></div>
+      </div>
+      <div class="ticket-qr">
+        <div id="qr-render"></div>
+        <div class="ticket-id" id="t-id">—</div>
+      </div>
+    </div>
+    <div class="ticket-bottom">
+      <div class="aviso">Apresente este QR Code na entrada</div>
+      <div class="tipo-badge" id="t-tipo">—</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-print" onclick="imprimirIngresso()">🖨️ Imprimir</button>
+      <button class="btn-close" onclick="fecharModal()">✕ Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Storage key ──
+const STORAGE_KEY = 'festa-junina-ingressos';
+
+// ── Estado ──
+let ingressos = [];
+let qrAtivo = null;
+
+// ── Init ──
+(async function init() {
+  await carregarStorage();
+  renderTabela();
+  renderStats();
+})();
+
+async function carregarStorage() {
+  try {
+    const r = await window.storage.get(STORAGE_KEY);
+    if (r && r.value) ingressos = JSON.parse(r.value);
+  } catch(e) { ingressos = []; }
+}
+
+async function salvarStorage() {
+  try {
+    await window.storage.set(STORAGE_KEY, JSON.stringify(ingressos));
+  } catch(e) { console.error('Storage erro:', e); }
+}
+
+// ── Gerar ID único ──
+function gerarID() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let id = '';
+  for(let i=0;i<8;i++) id += chars[Math.floor(Math.random()*chars.length)];
+  return id;
+}
+
+// ── Verificar duplicata ──
+function idUnico() {
+  let id;
+  do { id = gerarID(); } while(ingressos.find(x=>x.id===id));
+  return id;
+}
+
+// ── Gerar ingresso individual ──
+function gerarIngresso() {
+  const nome   = document.getElementById('inp-nome').value.trim() || 'Participante';
+  const tipo   = document.getElementById('inp-tipo').value;
+  const data   = document.getElementById('inp-data').value;
+  const hora   = document.getElementById('inp-hora').value;
+  const escola = document.getElementById('inp-escola').value.trim() || 'Festa Junina';
+  const obs    = document.getElementById('inp-obs').value.trim();
+
+  const ing = criarIngresso({ nome, tipo, data, hora, escola, obs });
+  ingressos.unshift(ing);
+  salvarStorage();
+  renderTabela();
+  renderStats();
+  mostrarIngresso(ing);
+  toast('Ingresso gerado com sucesso!');
+}
+
+function criarIngresso({nome, tipo, data, hora, escola, obs}) {
+  return {
+    id: idUnico(),
+    nome, tipo, data, hora, escola, obs,
+    status: 'ok',
+    geradoEm: new Date().toISOString(),
+    usadoEm: null
+  };
+}
+
+// ── Lote ──
+function gerarLote() {
+  const qtd    = parseInt(document.getElementById('inp-qtd').value) || 10;
+  const tipo   = document.getElementById('inp-tipo-lote').value;
+  const pre    = document.getElementById('inp-prefixo').value.trim();
+  const data   = document.getElementById('inp-data-lote').value;
+  const escola = document.getElementById('inp-escola-lote').value.trim() || 'Festa Junina';
+
+  for(let i=1;i<=qtd;i++) {
+    const nome = pre ? `${pre} ${i}` : `Ingresso ${String(i).padStart(3,'0')}`;
+    ingressos.unshift(criarIngresso({nome, tipo, data, hora:'18:00', escola, obs:''}));
+  }
+  salvarStorage();
+  renderTabela();
+  renderStats();
+  toast(`${qtd} ingressos gerados!`);
+}
+
+// ── Renderizar tabela ──
+function renderTabela() {
+  const texto  = document.getElementById('filtro-texto').value.toLowerCase();
+  const ftipo  = document.getElementById('filtro-tipo').value;
+  const fstatus= document.getElementById('filtro-status').value;
+
+  let lista = ingressos.filter(ing => {
+    const matchTexto  = !texto  || ing.nome.toLowerCase().includes(texto) || ing.id.toLowerCase().includes(texto);
+    const matchTipo   = !ftipo  || ing.tipo === ftipo;
+    const matchStatus = !fstatus|| ing.status === fstatus;
+    return matchTexto && matchTipo && matchStatus;
+  });
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  document.getElementById('empty-msg').style.display = lista.length ? 'none' : 'block';
+
+  lista.forEach((ing, idx) => {
+    const tr = document.createElement('tr');
+    const dt = ing.geradoEm ? new Date(ing.geradoEm).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}) : '—';
+    tr.innerHTML = `
+      <td style="opacity:.4;font-family:'IBM Plex Mono',monospace;font-size:11px">${idx+1}</td>
+      <td><code style="font-family:'IBM Plex Mono',monospace;font-size:12px;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px">${ing.id}</code></td>
+      <td style="font-weight:500">${ing.nome}</td>
+      <td>${badgeTipo(ing.tipo)}</td>
+      <td>${badgeStatus(ing.status)}</td>
+      <td style="font-size:11px;opacity:.6;white-space:nowrap">${dt}</td>
+      <td><div class="actions">
+        <button class="btn btn-outline" onclick="mostrarIngresso(ingressos.find(x=>x.id==='${ing.id}'))">🎟️</button>
+        ${ing.status==='ok'
+          ? `<button class="btn btn-danger" onclick="marcarUsado('${ing.id}')">✓ Usar</button>`
+          : `<button class="btn btn-outline" onclick="reverterUsado('${ing.id}')">↩</button>`}
+        <button class="btn btn-danger" style="background:rgba(192,57,43,.4)" onclick="deletarIngresso('${ing.id}')">🗑</button>
+      </div></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function badgeTipo(t) {
+  const map = { VIP:'badge-vip', Geral:'badge-geral', 'Criança':'badge-crianca',
+                'Meia-entrada':'badge-meia', Cortesia:'badge-ok' };
+  return `<span class="badge ${map[t]||'badge-geral'}">${t}</span>`;
+}
+function badgeStatus(s) {
+  return s==='ok'
+    ? '<span class="badge badge-ok">✓ Válido</span>'
+    : '<span class="badge badge-usado">✕ Usado</span>';
+}
+
+// ── Stats ──
+function renderStats() {
+  const total  = ingressos.length;
+  const usados = ingressos.filter(x=>x.status==='usado').length;
+  const validos= total - usados;
+  const vip    = ingressos.filter(x=>x.tipo==='VIP').length;
+
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat"><div class="num">${total}</div><div class="lbl">Total</div></div>
+    <div class="stat"><div class="num" style="color:#5ddb8d">${validos}</div><div class="lbl">Válidos</div></div>
+    <div class="stat"><div class="num" style="color:#aaa">${usados}</div><div class="lbl">Usados</div></div>
+    <div class="stat"><div class="num" style="color:#f8c555">${vip}</div><div class="lbl">VIP</div></div>
+  `;
+}
+
+// ── Mostrar modal ingresso ──
+function mostrarIngresso(ing) {
+  if(!ing) return;
+  document.getElementById('t-nome').textContent   = ing.nome;
+  document.getElementById('t-evento').textContent = ing.escola || 'Festa Junina 2025';
+  document.getElementById('t-escola').textContent = ing.escola || '';
+  document.getElementById('t-tipo').textContent   = ing.tipo;
+  document.getElementById('t-id').textContent     = ing.id;
+
+  // data formatada
+  const dtStr = ing.data ? new Date(ing.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}) : '—';
+  document.getElementById('t-data').textContent = dtStr;
+  document.getElementById('t-hora').textContent = ing.hora || '—';
+
+  const obsRow = document.getElementById('t-obs-row');
+  if(ing.obs) {
+    document.getElementById('t-obs').textContent = ing.obs;
+    obsRow.style.display = 'flex';
+  } else { obsRow.style.display = 'none'; }
+
+  // QR Code
+  const qrDiv = document.getElementById('qr-render');
+  qrDiv.innerHTML = '';
+  if(qrAtivo) { try { qrAtivo.clear(); } catch(e){} }
+  qrAtivo = new QRCode(qrDiv, {
+    text: ing.id,
+    width: 120, height: 120,
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+function fecharModal(e) {
+  if(e && e.target !== document.getElementById('overlay')) return;
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function imprimirIngresso() { window.print(); }
+
+// ── Ações ──
+async function marcarUsado(id) {
+  const ing = ingressos.find(x=>x.id===id);
+  if(ing) { ing.status='usado'; ing.usadoEm = new Date().toISOString(); }
+  await salvarStorage();
+  renderTabela(); renderStats();
+  toast('Ingresso marcado como usado.');
+}
+
+async function reverterUsado(id) {
+  const ing = ingressos.find(x=>x.id===id);
+  if(ing) { ing.status='ok'; ing.usadoEm=null; }
+  await salvarStorage();
+  renderTabela(); renderStats();
+  toast('Ingresso reativado.');
+}
+
+async function deletarIngresso(id) {
+  if(!confirm('Excluir este ingresso permanentemente?')) return;
+  ingressos = ingressos.filter(x=>x.id!==id);
+  await salvarStorage();
+  renderTabela(); renderStats();
+  toast('Ingresso excluído.');
+}
+
+// ── Exportar CSV ──
+function exportarCSV() {
+  const header = 'ID,Nome,Tipo,Status,Data,Hora,Escola,Obs,GeradoEm,UsadoEm\n';
+  const linhas = ingressos.map(i =>
+    [i.id,i.nome,i.tipo,i.status,i.data,i.hora,i.escola,i.obs||'',i.geradoEm||'',i.usadoEm||''].join(',')
+  ).join('\n');
+  const blob = new Blob([header+linhas], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='ingressos-festa-junina.csv'; a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV exportado!');
+}
+
+// ── Toast ──
+function toast(msg, isError=false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => el.className='toast', 2800);
+}
+</script>
+</body>
+</html>
